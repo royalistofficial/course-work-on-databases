@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+{% endblock %}
+
+{% block content %}
+<h1>Список клиентов</h1>
+    <a href="{% url 'main:create_customer' %}">Создать нового клиента</a>
+    <ul>
+        {% for customer in customers %}
+            <li>
+                {{ customer }} 
+                <a href="{% url 'main:update_customer' customer.customer_id %}">Редактировать</a>
+            </li>
+        {% endfor %}
+    </ul>
+<h1>Список поставщиков</h1>
+    <a href="{% url 'main:create_supplier' %}">Создать нового поставщика</a>
+    <ul>
+        {% for supplier in suppliers %}
+            <li>
+                {{ supplier }} 
+                <a href="{% url 'main:update_supplier' supplier.supplier_id %}">Редактировать</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+<h1>Список складов</h1>
+    <!-- <a href="{% url 'main:create_warehouse' %}">Создать новый склад</a> -->
+    <ul>
+        {% for warehouse in warehouses %}
+            <li>
+                {{ warehouse }} 
+                <a href="{% url 'main:update_warehouse' warehouse.warehouse_id %}">Редактировать</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+<h1>Список продуктов</h1>
+    <a href="{% url 'main:create_product' %}">Создать новый продукт</a>
+    <ul>
+        {% for product in products %}
+            <li>
+                {{ product }} 
+                <a href="{% url 'main:update_product' product.product_id %}">Редактировать</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Список цен</h1>
+    <a href="{% url 'main:create_customer_product_price' %}">Создать новый продукт</a>
+    <ul>
+        {% for customer_product_price in customer_product_prices %}
+            <li>
+                {{ customer_product_price }} 
+                <a href="{% url 'main:update_customer_product_price' customer_product_price.customer_product_price_id %}">Редактировать</a>
+                <a href="{% url 'main:delete_customer_product_price' customer_product_price.customer_product_price_id %}">Удалить</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Список Рецептов</h1>
+    <a href="{% url 'main:create_recipe' %}">Создать новый продукт</a>
+    <a href="{% url 'main:create_recipe_products' %}">Добавить продукт в рецепт</a>
+    <ul>
+        {% for recipe in recipes %}
+            <li>
+                {{ recipe.recipe }} 
+                <a href="{% url 'main:update_recipe' recipe.recipe.recipe_id %}">Редактировать</a>
+                <ul>
+                    {% for product in recipe.recipe_products %}
+                        <li>
+                            {{ product }} 
+                            <a href="{% url 'main:update_recipe_products' product.recipe_products_id %}">Редактировать</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Список заказов</h1>
+    <a href="{% url 'main:create_order_list' %}">Создать заказ</a>
+    <ul>
+        {% for order in order_list %}
+            <li>
+                {{ order }} 
+                <a href="{% url 'main:update_order_list' order.order_list_id %}">Редактировать</a>
+                <a href="{% url 'main:delete_order_list' order.order_list_id %}">Удалить</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Список производств</h1>
+    <a href="{% url 'main:create_workshop' %}">Создать производство</a>
+    <ul>
+        {% for workshop in workshops %}
+            <li>
+                {{ workshop }} 
+                <a href="{% url 'main:update_workshop' workshop.workshop_id %}">Редактировать</a>
+                <a href="{% url 'main:delete_workshop' workshop.workshop_id %}">Удалить</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

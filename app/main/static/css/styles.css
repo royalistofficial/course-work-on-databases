@@ -1,0 +1,105 @@
+/* styles.css */
+
+/* Общие стили */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+header {
+    background: #2c3e50; /* Измененный цвет фона */
+    color: #6fc9e0; /* Измененный цвет текста */
+    padding: 20px 0;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+}
+
+nav.top-nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav.top-nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav.top-nav ul li a {
+    color: #ecf0f1; /* Измененный цвет ссылок */
+    text-decoration: none;
+}
+
+nav.top-nav ul li a:hover {
+    text-decoration: underline;
+    color: #3498db; /* Цвет при наведении */
+}
+
+footer {
+    text-align: center;
+    padding: 10px 0;
+    background: #2c3e50; /* Измененный цвет фона */
+    color: #ecf0f1; /* Измененный цвет текста */
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Стили для списков */
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul li {
+    background: #ffffff;
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+}
+
+ul li a {
+    color: #2c3e50; /* Цвет ссылок в списках */
+    text-decoration: none;
+}
+
+ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Стили для форм */
+form {
+    background: #ffffff;
+    padding: 20px;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+form button {
+    background: #3498db; /* Цвет кнопки */
+    color: #ffffff; /* Цвет текста кнопки */
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background: #2980b9; /* Цвет кнопки при наведении */
+}
+
+/* Стили для ссылок "Cancel" */
+a {
+    color: #2c3e50; /* Цвет обычных ссылок */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}

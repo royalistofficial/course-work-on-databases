@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+{% endblock %}
+
+{% block content %}
+<h2>Данные успешно обработаны</h1>
+<ul>
+    <li><a href="{% url 'main:index' %}">На главную </a></li>
+</ul>
+{% endblock %}

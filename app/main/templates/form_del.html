@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+{% endblock %}
+
+{% block content %}
+<h2>Подтвердите удаление</h2>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Удалить</button>
+    <a href="{% url 'main:index' %}">Отмена</a>
+</form>
+{% endblock %}
