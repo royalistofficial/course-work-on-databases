@@ -4,11 +4,16 @@ from .models import (
     Supplier,
     Warehouse,
     Product,
-    CustomerProductPrice,
+    SupplierProductPrice,
     Recipe,
     RecipeProducts,
     OrderList,
     Workshop,
+    Userdj,
+    DebitingList,
+    Cheque,
+    ChequeProduct,
+    WarehouseProducts,
 )
 
 from .forms import (
@@ -16,11 +21,13 @@ from .forms import (
     SupplierForm,
     WarehouseForm,
     ProductForm,
-    CustomerProductPriceForm,
+    SupplierProductPriceForm,
     RecipeForm,
     RecipeProductsForm,
     OrderListForm,
     WorkshopForm,
+    UserdjForm,
+    WarehouseProductsForm,
 )
 
 def index(request):    
@@ -29,15 +36,25 @@ def index(request):
     for recipe in recipes:
         recipes_list.append({'recipe':recipe, 'recipe_products':RecipeProducts.objects.filter(recipe = recipe)})
 
+    cheque_list = []
+    cheques = Cheque.objects.all()
+    for cheque in cheques:
+        cheque_list.append({'cheque':cheque, 'cheque_product':ChequeProduct.objects.filter(cheque = cheque)})
+
+
 
     context = {'customers': Customer.objects.all(),
                'suppliers': Supplier.objects.all(),
                'warehouses': Warehouse.objects.all(),
+               'warehouse_products': WarehouseProducts.objects.all(),
                'products': Product.objects.all(),
-               'customer_product_prices': CustomerProductPrice.objects.all(),
+               'supplier_product_prices': SupplierProductPrice.objects.all(),
                'recipes': recipes_list,
                'order_list': OrderList.objects.all(),
                'workshops': Workshop.objects.all(),
+               'userdj': Userdj.objects.first(),
+               'debiting_list': DebitingList.objects.all(),
+               'cheque_list': cheque_list,
                }    
 
     return render(request, 'index.html', context)
@@ -58,6 +75,15 @@ def handle_form(request, form_class, instance=None, action='Create'):
         form = form_class(instance=instance)
     
     return render(request, 'form.html', {'form': form, 'action': action})
+
+def update_userdj(request):
+    userdj = get_object_or_404(Userdj, user_id=1)
+    return handle_form(request, UserdjForm, instance=userdj, action='Обновить дату')
+
+
+def create_warehouse_products(request):
+    return handle_form(request, WarehouseProductsForm, action='Купить продукт')
+
 
 def create_customer(request):
     return handle_form(request, CustomerForm, action='Создать клиента')
@@ -87,15 +113,15 @@ def update_product(request, product_id):
     product = get_object_or_404(Product, product_id=product_id)
     return handle_form(request, ProductForm, instance=product, action='Обновить продукт')
 
-def create_customer_product_price(request):
-    return handle_form(request, CustomerProductPriceForm, action='Создать цену продукта для клиента')
+def create_supplier_product_price(request):
+    return handle_form(request, SupplierProductPriceForm, action='Создать цену продукта для клиента')
 
-def update_customer_product_price(request, customer_product_price_id):
-    customer_product_price = get_object_or_404(CustomerProductPrice, customer_product_price_id=customer_product_price_id)
-    return handle_form(request, CustomerProductPriceForm, instance=customer_product_price, action='Обновить цену продукта для клиента')
+def update_supplier_product_price(request, supplier_product_price_id):
+    supplier_product_price = get_object_or_404(SupplierProductPrice, supplier_product_price_id=supplier_product_price_id)
+    return handle_form(request, SupplierProductPriceForm, instance=supplier_product_price, action='Обновить цену продукта для клиента')
 
-def delete_customer_product_price(request, customer_product_price_id):
-    price_instance = get_object_or_404(CustomerProductPrice, pk=customer_product_price_id)
+def delete_supplier_product_price(request, supplier_product_price_id):
+    price_instance = get_object_or_404(SupplierProductPrice, pk=supplier_product_price_id)
 
     if request.method == 'POST':
         price_instance.delete()
@@ -123,6 +149,13 @@ def create_recipe_products(request):
 def update_recipe_products(request, recipe_products_id):
     recipe_products = get_object_or_404(RecipeProducts, recipe_products_id=recipe_products_id)
     return handle_form(request, RecipeProductsForm, instance=recipe_products, action='Обновить продукты рецепта')
+
+def delete_recipe_products(request, recipe_products_id):
+    recipe_products_instance = get_object_or_404(Recipe, pk=recipe_products_id)
+    if request.method == 'POST':
+        recipe_products_instance.delete()
+        return redirect('main:success')
+    return render(request, 'form_del.html', )
 
 def create_order_list(request):
     return handle_form(request, OrderListForm, action='Создать список заказов')

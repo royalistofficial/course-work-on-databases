@@ -5,6 +5,8 @@
 {% endblock %}
 
 {% block content %}
+{{userdj}} <a href="{% url 'main:update_userdj'%}">Обновить дату</a>
+
 <h1>Список клиентов</h1>
     <a href="{% url 'main:create_customer' %}">Создать нового клиента</a>
     <ul>
@@ -37,8 +39,18 @@
         {% endfor %}
     </ul>
 
+<h1>Список продуктов на складе</h1>
+    <a href="{% url 'main:create_warehouse_products' %}">Купить продукт</a>
+    <ul>
+        {% for warehouse_product in warehouse_products %}
+            <li>
+                {{ warehouse_product }} 
+            </li>
+        {% endfor %}
+    </ul>
+
 <h1>Список продуктов</h1>
-    <a href="{% url 'main:create_product' %}">Создать новый продукт</a>
+    <a href="{% url 'main:create_product' %}">Создать продукт</a>
     <ul>
         {% for product in products %}
             <li>
@@ -49,19 +61,19 @@
     </ul>
 
     <h1>Список цен</h1>
-    <a href="{% url 'main:create_customer_product_price' %}">Создать новый продукт</a>
+    <a href="{% url 'main:create_supplier_product_price' %}">Создать новый продукт</a>
     <ul>
-        {% for customer_product_price in customer_product_prices %}
+        {% for supplier_product_price in supplier_product_prices %}
             <li>
-                {{ customer_product_price }} 
-                <a href="{% url 'main:update_customer_product_price' customer_product_price.customer_product_price_id %}">Редактировать</a>
-                <a href="{% url 'main:delete_customer_product_price' customer_product_price.customer_product_price_id %}">Удалить</a>
+                {{ supplier_product_price }} 
+                <a href="{% url 'main:update_supplier_product_price' supplier_product_price.supplier_product_price_id %}">Редактировать</a>
+                <a href="{% url 'main:delete_supplier_product_price' supplier_product_price.supplier_product_price_id %}">Удалить</a>
             </li>
         {% endfor %}
     </ul>
 
     <h1>Список Рецептов</h1>
-    <a href="{% url 'main:create_recipe' %}">Создать новый продукт</a>
+    <a href="{% url 'main:create_recipe' %}">Создать новый рецепт</a>
     <a href="{% url 'main:create_recipe_products' %}">Добавить продукт в рецепт</a>
     <ul>
         {% for recipe in recipes %}
@@ -73,6 +85,7 @@
                         <li>
                             {{ product }} 
                             <a href="{% url 'main:update_recipe_products' product.recipe_products_id %}">Редактировать</a>
+                            <a href="{% url 'main:delete_recipe_products' product.recipe_products_id %}">Удалить</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -100,6 +113,31 @@
                 {{ workshop }} 
                 <a href="{% url 'main:update_workshop' workshop.workshop_id %}">Редактировать</a>
                 <a href="{% url 'main:delete_workshop' workshop.workshop_id %}">Удалить</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Список чеков</h1>
+    <ul>
+        {% for cheque in cheque_list %}
+            <li>
+                {{ cheque.cheque }} 
+                <ul>
+                    {% for product in cheque.cheque_product %}
+                        <li>
+                            {{ product }} 
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Список списаний</h1>
+    <ul>
+        {% for debiting in debiting_list %}
+            <li>
+                {{ debiting }} 
             </li>
         {% endfor %}
     </ul>

@@ -11,6 +11,9 @@ class Userdj(models.Model):
     class Meta:
         db_table = 'userdj'
 
+    def __str__(self):
+        return (f"Капитал: {self.capital}, Дата: {self.date_now}")
+
 
 class Customer(models.Model):
     customer_id = models.AutoField(primary_key=True)
@@ -20,7 +23,7 @@ class Customer(models.Model):
         db_table = 'customer'
 
     def __str__(self):
-        return f"Customer {self.name}"
+        return f"Клиент {self.name}"
 
 
 class Supplier(models.Model):
@@ -34,7 +37,7 @@ class Supplier(models.Model):
         ]
 
     def __str__(self):
-        return f"Supplier {self.name}"
+        return f"Поставщик {self.name}"
 
 
 class Warehouse(models.Model):
@@ -46,8 +49,11 @@ class Warehouse(models.Model):
         db_table = 'warehouse'
 
     def __str__(self):
-        return f"Warehouse {self.warehouse_id}: Category: {self.category}, Max Capacity: {self.max_warehouse_capacity}"
+        return (f"Склад {self.warehouse_id}: "
+                f"Категория: {self.category}, "
+                f"Максимальная вместимость: {self.max_warehouse_capacity}")
     
+  
 class Product(models.Model):
     product_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=64, unique=True)
@@ -59,8 +65,12 @@ class Product(models.Model):
         db_table = 'product'
 
     def __str__(self):
-        return f"Product {self.product_id}: {self.name}"
-
+        return (f"Продукт {self.product_id}: "
+                f"Название: {self.name}, "
+                f"Тип: {self.warehouse.category}, "
+                f"Срок годности: {self.expiry_date}, "
+                f"Масса: {self.mass:.2f} кг")
+    
     def clean(self):
         if self.mass < 0:
             raise ValidationError('Mass cannot be negative.')
@@ -68,6 +78,7 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+
 
 class DebitingList(models.Model):
     debiting_list_id = models.AutoField(primary_key=True)
@@ -80,8 +91,10 @@ class DebitingList(models.Model):
         db_table = 'debiting_list'
 
     def __str__(self):
-        return f"Debiting List {self.debiting_list_id}: Date: {self.date_of_debiting}, Fresh: {self.fresh}"
-
+        return (f"Список списания {self.debiting_list_id}: "
+                f"Дата: {self.date_of_debiting}, "
+                f"Количество: {self.quantity}, "
+                f"Свежий: {self.fresh}")
 
 class WarehouseProducts(models.Model):
     warehouse_products_id = models.AutoField(primary_key=True)
@@ -94,28 +107,56 @@ class WarehouseProducts(models.Model):
 
 
     def __str__(self):
-        return f"Warehouse Product {self.warehouse_products_id}: Product: {self.product}, Quantity: {self.quantity}, Production Date: {self.production_date}, Debiting List: {self.debiting_list}"
+        return (f"Продукт: {self.product.name}, "
+                f"Количество: {self.quantity}, "
+                f"Дата производства: {self.production_date}")
+    
+    def save(self, *args, **kwargs):
+        if self.quantity < 0:
+            raise ValidationError("Количество не может быть отрицательным.")
+        if self.add_cheque():
+            raise ValidationError("Такой продукт не продается")
+        super().save(*args, **kwargs)
 
-class CustomerProductPrice(models.Model):
-    customer_product_price_id = models.AutoField(primary_key=True)
-    customer = models.ForeignKey('customer', on_delete=models.CASCADE)
+    def add_cheque(self):
+        supplier_product_price = SupplierProductPrice.objects.filter(product=self.product).order_by('price').first()
+        if supplier_product_price is not None:
+            userdj = Userdj.objects.first()
+            cheque = Cheque.objects.create(
+                date=userdj.date_now,  
+                customer=None,
+                supplier=supplier_product_price.supplier,
+            )
+            ChequeProduct.objects.create(
+                cheque = cheque,
+                product = self.product,
+                price = supplier_product_price.price,
+                quantity = self.quantity,
+            )
+            userdj.capital -= float(self.quantity) * float(supplier_product_price.price)
+            userdj.save()
+            return False
+        return True
+
+
+class SupplierProductPrice(models.Model):
+    supplier_product_price_id = models.AutoField(primary_key=True)
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
-        db_table = 'customer_product_price'
-        unique_together = ('customer', 'product')
+        db_table = 'supplier_product_price'
+        unique_together = ('supplier', 'product')
 
     def __str__(self):
-        return f"Price for {self.product} for {self.customer}: {self.price}"
-
+        return (f"Цена для продукта {self.product.name} от поставшика {self.supplier.name}: "
+                f"{self.price:.2f} руб.")
+    
     def clean(self):
         if self.price < 0:
             raise ValidationError('Price cannot be negative.')
 
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
 
 class Cheque(models.Model):
     cheque_id = models.AutoField(primary_key=True)
@@ -127,18 +168,23 @@ class Cheque(models.Model):
         db_table = 'cheque'
 
     def __str__(self):
-        return f"Cheque {self.cheque_id} - Date: {self.date} - Customer: {self.customer} - Supplier: {self.supplier}"
-
+        return (f"Чек {self.cheque_id} - Дата: {self.date} - Клиент: {self.customer} - Поставщик: {self.supplier}")
+    
 class ChequeProduct(models.Model):
     cheque_product_id = models.AutoField(primary_key=True)
-    cheque_reference = models.ForeignKey(Cheque, on_delete=models.PROTECT)
+    cheque = models.ForeignKey(Cheque, on_delete=models.PROTECT)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField()
 
     class Meta:
         db_table = 'cheque_product'
-
+    
+    def __str__(self):
+        return (f"Продукт: {self.product.name}, "
+                f"Цена: {self.price:.2f}, "
+                f"Количество: {self.quantity}")
+    
 
 class Recipe(models.Model):
     recipe_id = models.AutoField(primary_key=True)
@@ -152,15 +198,11 @@ class Recipe(models.Model):
         ]
 
     def __str__(self):
-        return f"Recipe {self.recipe_id}: Name: {self.name}, Finish Product: {self.finish_product}"
+        return (f"Рецепт {self.recipe_id}: "
+                f"Название: {self.name}, "
+                f"Готовый продукт: {self.finish_product.name}")
 
-    def clean(self):
-        if not self.name:
-            raise ValidationError('Name cannot be empty.')
 
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
 
 class RecipeProducts(models.Model):
     recipe_products_id = models.AutoField(primary_key=True)
@@ -175,8 +217,8 @@ class RecipeProducts(models.Model):
         ]
 
     def __str__(self):
-        return f"Recipe Product {self.recipe_products_id}: Recipe: {self.recipe}, Product: {self.product}, Quantity: {self.quantity}"
-
+        return (f"Продукт: {self.product.name}, "
+                f"Количество: {self.quantity}")
 
 class Workshop(models.Model):
     workshop_id = models.AutoField(primary_key=True)
@@ -188,7 +230,11 @@ class Workshop(models.Model):
         db_table = 'workshop'
 
     def __str__(self):
-        return f"Workshop {self.workshop_id}: {self.name} (Max Capacity: {self.max_capacity}, Recipe: {self.recipe})"
+        recipe_name = self.recipe.name if self.recipe else "Нет рецепта"
+        return (f"Мастерская {self.workshop_id}: "
+                f"Название: {self.name}, "
+                f"Максимальная вместимость: {self.max_capacity}, "
+                f"Рецепт: {recipe_name}")
 
 
 class OrderList(models.Model):
@@ -197,10 +243,18 @@ class OrderList(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
     date_order = models.DateField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         db_table = 'order_list'
 
-    def __str__(self):
-        return f"Order {self.order_list_id}: Customer: {self.customer}, Product: {self.product}, Quantity: {self.quantity}, Date: {self.date_order}"
 
+    def __str__(self):
+        total_price = self.quantity * self.price
+        return (f"Заказ {self.order_list_id}: "
+                f"Клиент: {self.customer}, "
+                f"Продукт: {self.product.name}, "
+                f"По цене: {self.price}, "
+                f"Количество: {self.quantity}, "
+                f"Дата: {self.date_order}, "
+                f"Общая стоимость: {total_price:.2f}")

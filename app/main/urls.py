@@ -24,6 +24,9 @@ urlpatterns = [
     path('',views.index, name='index'),
     path('about/',views.about, name='about'),
     path('success/', views.success, name='success'),
+
+    path('userdj_update/', views.update_userdj, name='update_userdj'),
+    path('warehouse_products_create/', views.create_warehouse_products, name='create_warehouse_products'),
     
     path('customers_create/', views.create_customer, name='create_customer'),
     path('customers_update/<int:customer_id>/', views.update_customer, name='update_customer'),
@@ -37,9 +40,9 @@ urlpatterns = [
     path('products_create/', views.create_product, name='create_product'),
     path('products_update/<int:product_id>/', views.update_product, name='update_product'),
     
-    path('create_customer_product_price/', views.create_customer_product_price, name='create_customer_product_price'),
-    path('update_customer_product_price/<int:product_id>/', views.update_customer_product_price, name='update_customer_product_price'),
-    path('delete_customer_product_price/<int:delete_customer_product_price_id>/', views.delete_customer_product_price, name='delete_customer_product_price'),
+    path('create_supplier_product_price/', views.create_supplier_product_price, name='create_supplier_product_price'),
+    path('update_supplier_product_price/<int:supplier_product_price_id>/', views.update_supplier_product_price, name='update_supplier_product_price'),
+    path('delete_supplier_product_price/<int:supplier_product_price_id>/', views.delete_supplier_product_price, name='delete_supplier_product_price'),
     
     path('create_recipe/', views.create_recipe, name='create_recipe'),
     path('update_recipe/<int:recipe_id>/', views.update_recipe, name='update_recipe'),
@@ -47,6 +50,7 @@ urlpatterns = [
     
     path('create_recipe_products/', views.create_recipe_products, name='create_recipe_products'),
     path('update_recipe_products/<int:recipe_products_id>/', views.update_recipe_products, name='update_recipe_products'),
+    path('delete_recipe_products/<int:recipe_products_id>/', views.delete_recipe_products, name='delete_recipe_products'),
 
     path('create_order_list/', views.create_order_list, name='create_order_list'),
     path('update_order_list/<int:order_list_id>/', views.update_order_list, name='update_order_list'),
