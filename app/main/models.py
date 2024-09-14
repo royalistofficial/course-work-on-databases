@@ -114,29 +114,8 @@ class WarehouseProducts(models.Model):
     def save(self, *args, **kwargs):
         if self.quantity < 0:
             raise ValidationError("Количество не может быть отрицательным.")
-        if self.add_cheque():
-            raise ValidationError("Такой продукт не продается")
         super().save(*args, **kwargs)
 
-    def add_cheque(self):
-        supplier_product_price = SupplierProductPrice.objects.filter(product=self.product).order_by('price').first()
-        if supplier_product_price is not None:
-            userdj = Userdj.objects.first()
-            cheque = Cheque.objects.create(
-                date=userdj.date_now,  
-                customer=None,
-                supplier=supplier_product_price.supplier,
-            )
-            ChequeProduct.objects.create(
-                cheque = cheque,
-                product = self.product,
-                price = supplier_product_price.price,
-                quantity = self.quantity,
-            )
-            userdj.capital -= float(self.quantity) * float(supplier_product_price.price)
-            userdj.save()
-            return False
-        return True
 
 
 class SupplierProductPrice(models.Model):

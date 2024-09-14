@@ -1,5 +1,6 @@
 from django import forms
-from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from .models import (
     Customer, 
@@ -13,7 +14,9 @@ from .models import (
     Userdj,
     Workshop,
     WarehouseProducts,
-    DebitingList
+    DebitingList,
+    Cheque,
+    ChequeProduct
 )
 
 class CustomerForm(forms.ModelForm):
@@ -187,6 +190,35 @@ class WarehouseProductsForm(forms.ModelForm):
         if userdj:
             self.initial['production_date'] = userdj.date_now
 
+    def save(self, commit=True):
+        warehouse_product = super(WarehouseProductsForm, self).save(commit=commit)
+        
+        if commit:
+            if self.add_cheque_buy(warehouse_product):
+                raise ValidationError("Такой продукт не продается")
+        
+        return warehouse_product
+    
+    def add_cheque_buy(self, warehouse_product):
+        supplier_product_price = SupplierProductPrice.objects.filter(product=warehouse_product.product).order_by('price').first()
+        if supplier_product_price:
+            userdj = Userdj.objects.first()
+            cheque = Cheque.objects.create(
+                date=userdj.date_now,  
+                customer=None,
+                supplier=supplier_product_price.supplier,
+            )
+            ChequeProduct.objects.create(
+                cheque=cheque,
+                product=warehouse_product.product,
+                price=supplier_product_price.price,
+                quantity=warehouse_product.quantity,
+            )
+            userdj.capital -= float(warehouse_product.quantity) * float(supplier_product_price.price)
+            userdj.save()
+            return False
+        return True
+
 class UserdjForm(forms.ModelForm):
     class Meta:
         model = Userdj
@@ -205,9 +237,116 @@ class UserdjForm(forms.ModelForm):
         return userdj
 
     def new_day(self, userdj):
-        self.debiting(userdj)
+        self.workshop_update(userdj)
+        self.order_update(userdj)
+        self.debiting_update(userdj)
+    
+    def order_update(self, userdj):
+        order_list = OrderList.objects.all()
+        for order in order_list:
+            warehouse_products = WarehouseProducts.objects.filter(product = order.product)
+            total_quantity = warehouse_products.aggregate(total=Sum('quantity'))['total']
+            if total_quantity < order.quantity:
+                cheque = Cheque.objects.create(
+                    date=userdj.date_now,  
+                    customer=order.customer,
+                    supplier=None,
+                )
+                ChequeProduct.objects.create(
+                    cheque=cheque,
+                    product=order.product,
+                    price= total_quantity * float(order.price),
+                    quantity = total_quantity,
+                )
+                userdj.capital += total_quantity * float(order.price)
+                userdj.save()
+                warehouse_products.delete()
+                order.quantity -= total_quantity
+                order.save()
+            elif total_quantity >= order.quantity:
+                cheque = Cheque.objects.create(
+                    date=userdj.date_now,  
+                    customer=order.customer,
+                    supplier=None,
+                )
+                ChequeProduct.objects.create(
+                    cheque=cheque,
+                    product=order.product,
+                    price=order.quantity * float(order.price),
+                    quantity=order.quantity,
+                )
+                userdj.capital += order.quantity * float(order.price)
+                userdj.save()
+                for warehouse_product in warehouse_products:
+                    if warehouse_product.quantity >= order.quantity:
+                        warehouse_product.quantity -= order.quantity
+                        warehouse_product.save()
+                        break
+                    else:
+                        order.quantity -= warehouse_product.quantity
+                        warehouse_product.delete()
+                order.delete()
 
-    def debiting(self, userdj):
+    def workshop_update(self, userdj):
+        workshops = Workshop.objects.all()
+        for workshop in workshops:
+            if workshop.recipe:
+                recipe_products = RecipeProducts.objects.filter(recipe = workshop.recipe)
+                quantity = int(float(workshop.max_capacity) / float(workshop.recipe.finish_product.mass))
+                end_of_work = True
+                for recipe_product in recipe_products:
+                    quantity_recipe_product = recipe_product.quantity * quantity
+                    warehouse_products = WarehouseProducts.objects.filter(product = recipe_product.product)
+                    supplier_product_price = SupplierProductPrice.objects.filter(product=recipe_product.product).order_by('price').first()
+                    sum_warehouse = sum(item['quantity'] for item in warehouse_products.values('quantity'))
+                    if sum_warehouse < quantity_recipe_product or supplier_product_price:
+                        cheque = Cheque.objects.create(
+                            date=userdj.date_now,  
+                            customer=None,
+                            supplier=supplier_product_price.supplier,
+                        )
+                        ChequeProduct.objects.create(
+                            cheque=cheque,
+                            product=recipe_product.product,
+                            price=supplier_product_price.price,
+                            quantity = quantity - sum_warehouse,
+                        )
+                        userdj.capital -= (quantity_recipe_product - sum_warehouse) * float(supplier_product_price.price)
+                        userdj.save()
+                        for i in warehouse_products:
+                            i.delete()
+                    elif sum_warehouse >= quantity_recipe_product:
+                        for warehouse_product in warehouse_products:
+                            if warehouse_product.quantity >= quantity_recipe_product:
+                                warehouse_product.quantity -= quantity_recipe_product
+                                warehouse_product.save()
+                            else:
+                                quantity_recipe_product -= warehouse_product.quantity
+                                warehouse_product.delete()
+                    else:
+                        end_of_work = False
+
+
+                if end_of_work:
+                    WarehouseProducts.objects.create(
+                        product = workshop.recipe.finish_product,
+                        quantity = quantity,
+                        production_date = userdj.date_now,
+
+                    )
+                workshop.recipe = None
+                workshop.save()
+
+        order_list = OrderList.objects.all()
+        for order, workshop in zip([order for order in order_list if Recipe.objects.get(finish_product=order.product)], workshops):
+            workshop.recipe = Recipe.objects.get(finish_product=order.product)
+            workshop.save()
+
+    def debiting_update(self, userdj):
+        warehouse_products = WarehouseProducts.objects.all()
+        for warehouse_product in warehouse_products:
+            if warehouse_product.quantity == 0:
+                warehouse_products.delete()
         warehouse_products = WarehouseProducts.objects.all()
         for warehouse_product in warehouse_products:
             if warehouse_product.production_date + timezone.timedelta(days=warehouse_product.product.expiry_date) < userdj.date_now:
@@ -243,11 +382,8 @@ class UserdjForm(forms.ModelForm):
                         userdj.capital += float(supplier_product_price.price) * float(warehouse_product.quantity)
 
                     warehouse_product.delete()
-                    self.debiting(userdj)
+                    self.debiting_update(userdj)
                     break
-
-
-
 
                 
 
