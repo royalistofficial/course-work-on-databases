@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% endblock %}
+
+{% block content %}
+    <h2>Список чеков</h2>
+    <form method="GET" action="{% url 'main:cheque_list' %}">
+        <label for="start_date">Дата начала:</label>
+        <input type="date" id="start_date" name="start_date" required>
+        
+        <label for="end_date">Дата окончания:</label>
+        <input type="date" id="end_date" name="end_date" required>
+
+        <label for="warehouse">Категория:</label>
+        <select id="warehouse" name="warehouse" required>
+            <option value="">Выберите категорию</option>
+            <option value="-1">{{ 'все' }}</option>
+            {% for warehouse in warehouses %}
+                <option value="{{ warehouse.id }}">{{ warehouse.category }}</option>
+            {% endfor %}
+        </select>
+        
+        
+        <button type="submit">Показать</button>
+    </form>
+
+    <h3>Результаты:</h3>
+    <ul>
+        <h4>Чеки поставщика:</h4>
+        {% for item in cheque_list_supplier %}
+            <li>
+                <strong>Поставщик: {{ item.supplier }}</strong>
+                <ul>
+                    {% for cheque_item in item.cheque_supplier %}
+                        <li>
+                            {{cheque_item.cheque}}
+                            <ul>
+                                {% for product in cheque_item.cheque_product %}
+                                    <li>{{product}}</li>
+                                {% empty %}
+                                    <li>Нет продуктов в этом чеке.</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% empty %}
+                        <li>Нет чеков для данного поставщика за указанный период.</li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% empty %}
+                <li>Нет данных за указанный период.</li>
+            {% endfor %}
+    </ul>
+
+    <ul>
+        <h4>Чеки клиента:</h4>
+        {% for item in cheque_list_customer %}
+        <li>
+            <strong>Клиент: {{ item.customer }}</strong>
+            <ul>
+                {% for cheque_item in item.cheque_customer %}
+                    <li>
+                        {{cheque_item.cheque}}
+                        <ul>
+                            {% for product in cheque_item.cheque_product %}
+                                <li>{{product}}</li>
+                            {% empty %}
+                                <li>Нет продуктов в этом чеке.</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% empty %}
+                    <li>Нет чеков для данного клиента за указанный период.</li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% empty %}
+            <li>Нет данных за указанный период.</li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

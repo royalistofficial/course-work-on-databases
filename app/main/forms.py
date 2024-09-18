@@ -245,7 +245,7 @@ class UserdjForm(forms.ModelForm):
         order_list = OrderList.objects.all()
         for order in order_list:
             warehouse_products = WarehouseProducts.objects.filter(product = order.product)
-            total_quantity = warehouse_products.aggregate(total=Sum('quantity'))['total']
+            total_quantity = warehouse_products.aggregate(total=Sum('quantity'))['total'] or 0
             if total_quantity < order.quantity:
                 cheque = Cheque.objects.create(
                     date=userdj.date_now,  
@@ -255,10 +255,10 @@ class UserdjForm(forms.ModelForm):
                 ChequeProduct.objects.create(
                     cheque=cheque,
                     product=order.product,
-                    price= total_quantity * float(order.price),
+                    price= float(order.price),
                     quantity = total_quantity,
                 )
-                userdj.capital += total_quantity * float(order.price)
+                userdj.capital +=  float(order.price)
                 userdj.save()
                 warehouse_products.delete()
                 order.quantity -= total_quantity
@@ -272,10 +272,10 @@ class UserdjForm(forms.ModelForm):
                 ChequeProduct.objects.create(
                     cheque=cheque,
                     product=order.product,
-                    price=order.quantity * float(order.price),
+                    price=float(order.price),
                     quantity=order.quantity,
                 )
-                userdj.capital += order.quantity * float(order.price)
+                userdj.capital += float(order.price)
                 userdj.save()
                 for warehouse_product in warehouse_products:
                     if warehouse_product.quantity >= order.quantity:

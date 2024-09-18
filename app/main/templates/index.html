@@ -118,6 +118,7 @@
     </ul>
 
     <h1>Список чеков</h1>
+    <a href="{% url 'main:cheque_list' %}">Отчет о покупках-продажах</a>
     <ul>
         {% for cheque in cheque_list %}
             <li>
@@ -133,7 +134,7 @@
         {% endfor %}
     </ul>
 
-    <h1>Список списаний</h1>
+    <h1><a href="{% url 'main:debiting_list' %}">Список списаний</a></h1>
     <ul>
         {% for debiting in debiting_list %}
             <li>

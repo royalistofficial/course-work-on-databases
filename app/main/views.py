@@ -184,3 +184,57 @@ def delete_workshop(request, workshop_id):
         price_instance.delete()
         return redirect('main:success')
     return render(request, 'form_del.html', )
+
+def debiting_list_view(request):
+    debiting_list1 = []
+    debiting_list2 = []
+    if request.method == 'GET':
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        if start_date and end_date:
+            debiting_list1 = DebitingList.objects.filter(date_of_debiting__range=[start_date, end_date], fresh=True)
+            debiting_list2 = DebitingList.objects.filter(date_of_debiting__range=[start_date, end_date], fresh=False)
+
+    return render(request, 'debiting_list.html', {'debiting_list1': debiting_list1, 'debiting_list2': debiting_list2})
+
+
+def cheque_list_view(request):
+    cheque_list_customer = []
+    cheque_list_supplier = []
+    if request.method == 'GET':
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        warehouse = int(request.GET.get('warehouse') or 0)
+
+        if start_date and end_date and warehouse:
+            suppliers = Supplier.objects.all()
+            for supplier in suppliers:
+                cheque_supplier = []
+                cheques = Cheque.objects.filter(date__range=[start_date, end_date], supplier=supplier)
+                for cheque in cheques:
+                    if warehouse == -1:
+                        cheque_product = ChequeProduct.objects.filter(cheque = cheque)
+                    else:
+                        cheque_product = ChequeProduct.objects.filter(cheque = cheque, product__warehouse = warehouse)
+                    if cheque_product:
+                        cheque_supplier.append({'cheque':cheque, 'cheque_product':cheque_product})
+                cheque_list_supplier.append({'supplier': supplier, 'cheque_supplier': cheque_supplier})
+            
+            customers = Customer.objects.all()
+            for customer in customers:
+                cheque_customer = []
+                cheques = Cheque.objects.filter(date__range=[start_date, end_date], customer=customer)
+                for cheque in cheques:
+                    if warehouse == -1:
+                        cheque_product = ChequeProduct.objects.filter(cheque = cheque)
+                    else:
+                        cheque_product = ChequeProduct.objects.filter(cheque = cheque, product__warehouse = warehouse)
+                    
+                    if cheque_product:
+                        cheque_customer.append({'cheque':cheque, 'cheque_product':cheque_product})
+                cheque_list_customer.append({'customer': customer, 'cheque_customer': cheque_customer})
+
+    return render(request, 'cheque_list.html', {'cheque_list_supplier': cheque_list_supplier,
+                                                'cheque_list_customer': cheque_list_customer,
+                                                'warehouses': Warehouse.objects.all()})

@@ -59,5 +59,8 @@ urlpatterns = [
     path('create_workshop/', views.create_workshop, name='create_workshop'),
     path('update_workshop/<int:workshop_id>/', views.update_workshop, name='update_workshop'),
     path('delete_workshop/<int:workshop_id>/', views.delete_workshop, name='delete_workshop'),
+
+    path('debiting-list/', views.debiting_list_view, name='debiting_list'),  
+    path('cheque-list/', views.cheque_list_view, name='cheque_list'),  
     
 ]

@@ -49,9 +49,15 @@ class Warehouse(models.Model):
         db_table = 'warehouse'
 
     def __str__(self):
+        products = Product.objects.filter(warehouse_id=self.warehouse_id)
+        warehouse_products = WarehouseProducts.objects.filter(product__in = products)
+        warehouse_capacity = self.max_warehouse_capacity
+        for warehouse_product in warehouse_products:
+            warehouse_capacity -= int(warehouse_product.quantity)*float(warehouse_product.product.mass)
         return (f"Склад {self.warehouse_id}: "
                 f"Категория: {self.category}, "
-                f"Максимальная вместимость: {self.max_warehouse_capacity}")
+                f"Максимальная вместимость: {self.max_warehouse_capacity} кг, "
+                f"Текущая вместимость: {warehouse_capacity} кг")
     
   
 class Product(models.Model):
@@ -91,10 +97,11 @@ class DebitingList(models.Model):
         db_table = 'debiting_list'
 
     def __str__(self):
-        return (f"Список списания {self.debiting_list_id}: "
+        return (f"Списание {self.debiting_list_id}: "
+                f"Продукт: {self.product.name}, "
                 f"Дата: {self.date_of_debiting}, "
                 f"Количество: {self.quantity}, "
-                f"Свежий: {self.fresh}")
+                f"{'Свежий' if self.fresh else 'Стухший'}")
 
 class WarehouseProducts(models.Model):
     warehouse_products_id = models.AutoField(primary_key=True)
@@ -160,9 +167,11 @@ class ChequeProduct(models.Model):
         db_table = 'cheque_product'
     
     def __str__(self):
+
         return (f"Продукт: {self.product.name}, "
-                f"Цена: {self.price:.2f}, "
-                f"Количество: {self.quantity}")
+                f"Цена за шт: {self.price:,.2f}, "
+                f"Количество: {self.quantity} "
+                f"Стоимость: {self.quantity*self.price:,.2f} ")
     
 
 class Recipe(models.Model):
@@ -229,11 +238,9 @@ class OrderList(models.Model):
 
 
     def __str__(self):
-        total_price = self.quantity * self.price
         return (f"Заказ {self.order_list_id}: "
                 f"Клиент: {self.customer}, "
                 f"Продукт: {self.product.name}, "
-                f"По цене: {self.price}, "
+                f"По цене за шт: {self.price}, "
                 f"Количество: {self.quantity}, "
-                f"Дата: {self.date_order}, "
-                f"Общая стоимость: {total_price:.2f}")
+                f"Дата: {self.date_order}, ")
