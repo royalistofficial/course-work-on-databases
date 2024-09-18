@@ -26,6 +26,39 @@
     </form>
 
     <h3>Результаты:</h3>
+
+    <ul>
+        <h4>отчеты поставщиков:</h4>
+        {% for item in list_supplier %}
+            <li>
+                <strong>Поставщик: {{ item.supplier }}</strong>
+                <ul>
+                    {% for product, value in item.temp_supplier.items %}
+                        <li>{{ product }}: куплено {{ value.quantity }} штук по общей стоимости {{ value.price }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% empty %}
+                <li>Нет данных за указанный период.</li>
+            {% endfor %}
+    </ul>
+
+    <ul>
+        <h4>отчеты  клиентов:</h4>
+        {% for item in list_customer %}
+            <li>
+                <strong>Клиент: {{ item.customer }}</strong>
+                <ul>
+                    {% for product, value in item.temp_customer.items %}
+                    <li>{{ product }}: продано {{ value.quantity }} штук по общей стоимости {{ value.price }}</li>
+                {% endfor %}
+                </ul>
+            </li>
+            {% empty %}
+                <li>Нет данных за указанный период.</li>
+            {% endfor %}
+    </ul>
+
     <ul>
         <h4>Чеки поставщика:</h4>
         {% for item in cheque_list_supplier %}

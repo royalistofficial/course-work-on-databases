@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from collections import defaultdict
 from .models import (
     Customer,
     Supplier,
@@ -202,6 +203,8 @@ def debiting_list_view(request):
 def cheque_list_view(request):
     cheque_list_customer = []
     cheque_list_supplier = []
+    list_supplier = []
+    list_customer = []
     if request.method == 'GET':
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -211,19 +214,27 @@ def cheque_list_view(request):
             suppliers = Supplier.objects.all()
             for supplier in suppliers:
                 cheque_supplier = []
+                temp_supplier = defaultdict(lambda: {'quantity': 0, 'price': 0})
                 cheques = Cheque.objects.filter(date__range=[start_date, end_date], supplier=supplier)
                 for cheque in cheques:
                     if warehouse == -1:
                         cheque_product = ChequeProduct.objects.filter(cheque = cheque)
                     else:
                         cheque_product = ChequeProduct.objects.filter(cheque = cheque, product__warehouse = warehouse)
+                    
                     if cheque_product:
-                        cheque_supplier.append({'cheque':cheque, 'cheque_product':cheque_product})
+                        cheque_supplier.append({'cheque':cheque, 'cheque_product': cheque_product})
+                        for i in cheque_product:
+                            temp_supplier[i.product.name]['quantity'] += i.quantity
+                            temp_supplier[i.product.name]['price'] += i.quantity * i.price
+
                 cheque_list_supplier.append({'supplier': supplier, 'cheque_supplier': cheque_supplier})
+                list_supplier.append({'supplier': supplier, 'temp_supplier': dict(temp_supplier)})
             
             customers = Customer.objects.all()
             for customer in customers:
                 cheque_customer = []
+                temp_customer = defaultdict(lambda: {'quantity': 0, 'price': 0})
                 cheques = Cheque.objects.filter(date__range=[start_date, end_date], customer=customer)
                 for cheque in cheques:
                     if warehouse == -1:
@@ -233,8 +244,16 @@ def cheque_list_view(request):
                     
                     if cheque_product:
                         cheque_customer.append({'cheque':cheque, 'cheque_product':cheque_product})
+                        for i in cheque_product:
+                            temp_customer[i.product.name]['quantity'] += i.quantity
+                            temp_customer[i.product.name]['price'] += i.quantity * i.price
                 cheque_list_customer.append({'customer': customer, 'cheque_customer': cheque_customer})
+                list_customer.append({'customer': customer, 'temp_customer': dict(temp_customer)})
+
+            
 
     return render(request, 'cheque_list.html', {'cheque_list_supplier': cheque_list_supplier,
                                                 'cheque_list_customer': cheque_list_customer,
+                                                'list_supplier': list_supplier,
+                                                'list_customer': list_customer,
                                                 'warehouses': Warehouse.objects.all()})
