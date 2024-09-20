@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from collections import defaultdict
 from .models import (
     Customer,
@@ -205,12 +205,21 @@ def cheque_list_view(request):
     cheque_list_supplier = []
     list_supplier = []
     list_customer = []
+    debiting_list1 = []
+    debiting_list2 = []
     if request.method == 'GET':
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         warehouse = int(request.GET.get('warehouse') or 0)
 
         if start_date and end_date and warehouse:
+            if warehouse == -1:
+                debiting_list1 = DebitingList.objects.filter(date_of_debiting__range=[start_date, end_date], fresh=True)
+                debiting_list2 = DebitingList.objects.filter(date_of_debiting__range=[start_date, end_date], fresh=False)
+            else:
+                debiting_list1 = DebitingList.objects.filter(date_of_debiting__range=[start_date, end_date], fresh=True, product__warehouse = warehouse)
+                debiting_list2 = DebitingList.objects.filter(date_of_debiting__range=[start_date, end_date], fresh=False, product__warehouse = warehouse)
+
             suppliers = Supplier.objects.all()
             for supplier in suppliers:
                 cheque_supplier = []
@@ -256,4 +265,6 @@ def cheque_list_view(request):
                                                 'cheque_list_customer': cheque_list_customer,
                                                 'list_supplier': list_supplier,
                                                 'list_customer': list_customer,
-                                                'warehouses': Warehouse.objects.all()})
+                                                'warehouses': Warehouse.objects.all(),
+                                                'debiting_list1': debiting_list1, 
+                                                'debiting_list2': debiting_list2})

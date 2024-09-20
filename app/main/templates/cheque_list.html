@@ -60,6 +60,23 @@
     </ul>
 
     <ul>
+        <h4>Списанная свежая</h4>
+        {% for item in debiting_list1 %}
+            <li>{{ item }}</li>
+        {% empty %}
+            <li>Нет данных за указанный период.</li>
+        {% endfor %}
+    </ul>
+    <ul>
+        <h4>Списанная стухшая</h4>
+        {% for item in debiting_list2 %}
+            <li>{{ item }}</li>
+        {% empty %}
+            <li>Нет данных за указанный период.</li>
+        {% endfor %}
+    </ul>
+    
+    <ul>
         <h4>Чеки поставщика:</h4>
         {% for item in cheque_list_supplier %}
             <li>

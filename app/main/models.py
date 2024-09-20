@@ -244,3 +244,4 @@ class OrderList(models.Model):
                 f"По цене за шт: {self.price}, "
                 f"Количество: {self.quantity}, "
                 f"Дата: {self.date_order}, ")
+    
